@@ -64,36 +64,95 @@
   </header>
   <main class="container">
     <section class="query">
-      <h2>Query 1: Employee Data Analysis</h2>
-      <p>This query fetches all employees with salaries above a certain threshold and groups them by department.</p>
+      <h2>Query 1: Create a Date List with Recursion</h2>
+      <p>This query can be used to generate a list of dates by using recursive CTE.</p>
       <pre><code>
-SELECT department, COUNT(*) AS employee_count
-FROM employees
-WHERE salary > 50000
-GROUP BY department
-ORDER BY employee_count DESC;
+WITH RECUSIVE DATE_LIST AS(
+	SELECT
+		DATE_TRUNC('MONTH', CURRENT_DATE) AS REPORT_MONTH
+UNION ALL 
+	SELECT 
+		A.REPORT_DATE - INTERVAL '1 MONTH' AS REPORT_MONTH
+	FROM 
+		DATE_LIST A 
+	WHERE 
+		A.REPORT_DATE > CURRENT_DATE - INTERVAL '5 MONTH'
+)
+SELECT 
+	*
+FROM 
+	DATE_LIST;
       </code></pre>
     </section>
     <section class="query">
-      <h2>Query 2: Customer Purchase History</h2>
-      <p>This query retrieves the top 10 customers based on the total value of their purchases.</p>
+      <h2>Query 2: Using Bitwise Operators</h2>
+      <p>This query demonstrates how bitwise operators can be used for assigning and reporting on permissions granted to users.</p>
       <pre><code>
-SELECT customer_id, SUM(total_amount) AS total_spent
-FROM purchases
-GROUP BY customer_id
-ORDER BY total_spent DESC
-LIMIT 10;
+WITH PERMISSIONS AS (
+	SELECT 
+		*
+	FROM (
+		VALUES
+			('SELECT', 1)  --0001
+		,	('INSERT', 2)  --0010
+		,	('ALTER', 4)   --0100
+		,	('DELETE', 8)  --1000
+	) AS A(PERMISSIONS, ID)
+), USER_ASSIGNMENT AS (
+	SELECT 
+		*
+	FROM (
+		VALUES 
+			('Larry', 3)   --0011 
+		,	('Moe', 15)    --1111
+		,	('Curly', 11)  --1011
+		,	('Shem', 6)    --0110
+	) AS A(USER_NAME, PERMISSIONS)
+)
+SELECT 
+	A.USER_NAME 
+,	LISTAGG(B.PERMISSION, ', ') AS PERMISSION_LIST
+FROM 
+	USER_ASSIGNMENT A 
+	LEFT JOIN PERMISSIONS B ON BITAND(A.PERMISSIONS, B.ID) = B.ID 
+GROUP BY 
+	A.USER_NAME;
       </code></pre>
     </section>
     <section class="query">
-      <h2>Query 3: Sales Trend Analysis</h2>
-      <p>This query generates monthly sales trends for the current year.</p>
+      <h2>Query 3: Code Lookup with Cross Join</h2>
+      <p>This query is used to search a table for a count of records across multiple records that match a list of target values.</p>
       <pre><code>
-SELECT DATE_FORMAT(order_date, '%Y-%m') AS month, SUM(order_total) AS total_sales
-FROM orders
-WHERE YEAR(order_date) = YEAR(CURDATE())
-GROUP BY month
-ORDER BY month ASC;
+WITH ICD_TARGETS AS (
+	SELECT 
+		*
+	FROM (
+		VALUES --Post-traumatic stress disorder codes
+			('F43.10')
+		,	('F43.11')
+		,	('F43.12')
+		) AS A(ICDCODE)
+), CLAIM_RECORDS AS (
+	SELECT 
+		*
+	FROM (
+		VALUES 
+			('Larry', 'F43.10', 'F43.11', K52.81', 'M00.10', 'F43.12')
+		,	('Moe', 'M00.10', 'F43.10', 'H21.9', 'F43.12', 'H21.9')
+		,	('Curly', 'H21.9', 'F43.11', 'H34.23', 'J19.23', 'F43.10')
+		,	('Shem', 'J19.23', 'K20.0', 'M00.10', 'F43.12', 'F43.10')
+	) AS A(PATIENT, ICD1, ICD2, ICD3, ICD4, ICD5)
+)
+SELECT 
+	B.ICDCODE
+,	COUNT(*) AS CODE_COUNT
+FROM 
+	CLAIM_RECORD A 
+	CROSS JOIN ICD_TARGETS B 
+WHERE 
+	B.ICDCODE IN (A.ICD1, A.ICD2, A.ICD3, A.ICD4, A.ICD5) 
+GROUP BY 
+	B.ICDCODE;
       </code></pre>
     </section>
   </main>
